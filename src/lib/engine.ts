@@ -139,8 +139,18 @@ export class FlowEngine {
 
         case "code-block": {
           const code = config.code as string || "return input;";
-          const fn = new Function("input", "config", "results", code);
-          output = fn(input, config, Object.fromEntries(this.results));
+          const fn = new Function("input", "config", "results", `return (async () => {\n${code}\n})();`);
+          let timeout: ReturnType<typeof setTimeout> | undefined;
+          try {
+            output = await Promise.race([
+              fn(input, config, Object.fromEntries(this.results)),
+              new Promise<never>((_, reject) => {
+                timeout = setTimeout(() => reject(new Error("Code block timed out after 5000ms")), 5000);
+              }),
+            ]);
+          } finally {
+            clearTimeout(timeout);
+          }
           break;
         }
 
