@@ -1,10 +1,16 @@
 import { Node, Edge } from "@xyflow/react";
-import { NodeData, ExecutionResult, StepExecution, ValidationResult, ValidationError } from "@/types";
+import {
+  NodeData,
+  ExecutionResult,
+  StepExecution,
+  ValidationResult,
+  ValidationError,
+} from "@/types";
 
 // ─── CSV Parser Helper ──────────────────────────────────────────
 export function parseCsv(
   text: string,
-  options?: { delimiter?: string; hasHeader?: boolean; trimValues?: boolean }
+  options?: { delimiter?: string; hasHeader?: boolean; trimValues?: boolean },
 ): Record<string, unknown>[] | string[][] {
   if (!text || typeof text !== "string") return [];
 
@@ -37,7 +43,10 @@ export function parseCsv(
       }
       currentRow.push(trimValues ? currentVal.trim() : currentVal);
       currentVal = "";
-      if (currentRow.length > 1 || (currentRow.length === 1 && currentRow[0] !== "")) {
+      if (
+        currentRow.length > 1 ||
+        (currentRow.length === 1 && currentRow[0] !== "")
+      ) {
         rows.push(currentRow);
       }
       currentRow = [];
@@ -48,7 +57,10 @@ export function parseCsv(
 
   // Push remaining cell and row
   currentRow.push(trimValues ? currentVal.trim() : currentVal);
-  if (currentRow.length > 1 || (currentRow.length === 1 && currentRow[0] !== "")) {
+  if (
+    currentRow.length > 1 ||
+    (currentRow.length === 1 && currentRow[0] !== "")
+  ) {
     rows.push(currentRow);
   }
 
@@ -85,7 +97,10 @@ export class FlowEngine {
   }
 
   // ── Topological sort of nodes ───────────────────────────────────
-  private topologicalSort(nodes: Node<NodeData>[], edges: Edge[]): Node<NodeData>[] {
+  private topologicalSort(
+    nodes: Node<NodeData>[],
+    edges: Edge[],
+  ): Node<NodeData>[] {
     const adj = new Map<string, string[]>();
     const inDeg = new Map<string, number>();
 
@@ -127,20 +142,29 @@ export class FlowEngine {
       return result?.output;
     }
     // Multiple inputs: combine into array
-    return incomingEdges.map((e) => this.results.get(e.source)?.output).filter((v) => v !== undefined);
+    return incomingEdges
+      .map((e) => this.results.get(e.source)?.output)
+      .filter((v) => v !== undefined);
   }
 
   // ── Get output data for a specific handle ───────────────────────
-  private getOutputForHandle(nodeId: string, handleId: string | undefined, edges: Edge[]): unknown {
+  private getOutputForHandle(
+    nodeId: string,
+    handleId: string | undefined,
+    edges: Edge[],
+  ): unknown {
     const incomingEdge = edges.find(
-      (e) => e.target === nodeId && (!handleId || e.targetHandle === handleId)
+      (e) => e.target === nodeId && (!handleId || e.targetHandle === handleId),
     );
     if (!incomingEdge) return undefined;
     return this.results.get(incomingEdge.source)?.output;
   }
 
   // ── Execute a single node ───────────────────────────────────────
-  private async executeNode(node: Node<NodeData>, input: unknown): Promise<unknown> {
+  private async executeNode(
+    node: Node<NodeData>,
+    input: unknown,
+  ): Promise<unknown> {
     const { nodeType, config } = node.data;
     const start = performance.now();
 
@@ -150,12 +174,18 @@ export class FlowEngine {
       switch (nodeType) {
         // ── Triggers ──
         case "manual-trigger":
-          output = { trigger: "manual", timestamp: new Date().toISOString(), data: config.data || {} };
+          output = {
+            trigger: "manual",
+            timestamp: new Date().toISOString(),
+            data: config.data || {},
+          };
           break;
 
         case "webhook-trigger": {
           let body = {};
-          try { body = JSON.parse(config.sampleBody as string || "{}"); } catch {}
+          try {
+            body = JSON.parse((config.sampleBody as string) || "{}");
+          } catch {}
           output = {
             trigger: "webhook",
             method: config.method || "POST",
@@ -181,7 +211,11 @@ export class FlowEngine {
         case "delay": {
           const duration = (config.duration as number) || 1000;
           await new Promise((r) => setTimeout(r, Math.min(duration, 5000)));
-          output = { ...((input as object) || {}), delayed: true, delayMs: duration };
+          output = {
+            ...((input as object) || {}),
+            delayed: true,
+            delayMs: duration,
+          };
           break;
         }
 
@@ -191,7 +225,7 @@ export class FlowEngine {
           await new Promise((r) => setTimeout(r, Math.min(mockDelay, 3000)));
           let mockData: unknown;
           try {
-            mockData = JSON.parse(config.mockResponse as string || "{}");
+            mockData = JSON.parse((config.mockResponse as string) || "{}");
           } catch {
             mockData = config.mockResponse || "OK";
           }
@@ -207,14 +241,22 @@ export class FlowEngine {
         }
 
         case "code-block": {
-          const code = config.code as string || "return input;";
-          const fn = new Function("input", "config", "results", `return (async () => {\n${code}\n})();`);
+          const code = (config.code as string) || "return input;";
+          const fn = new Function(
+            "input",
+            "config",
+            "results",
+            `return (async () => {\n${code}\n})();`,
+          );
           let timeout: ReturnType<typeof setTimeout> | undefined;
           try {
             output = await Promise.race([
               fn(input, config, Object.fromEntries(this.results)),
               new Promise<never>((_, reject) => {
-                timeout = setTimeout(() => reject(new Error("Code block timed out after 5000ms")), 5000);
+                timeout = setTimeout(
+                  () => reject(new Error("Code block timed out after 5000ms")),
+                  5000,
+                );
               }),
             ]);
           } finally {
@@ -227,7 +269,8 @@ export class FlowEngine {
         case "json-parser": {
           const op = config.operation || "parse";
           if (op === "parse") {
-            const str = typeof input === "string" ? input : JSON.stringify(input);
+            const str =
+              typeof input === "string" ? input : JSON.stringify(input);
             let parsed = JSON.parse(str);
             if (config.path) {
               const pathParts = (config.path as string).split(".");
@@ -253,7 +296,11 @@ export class FlowEngine {
             const parts = (config.path as string).split(".");
             let val: unknown = input;
             for (const p of parts) {
-              if (val && typeof val === "object" && p in (val as Record<string, unknown>)) {
+              if (
+                val &&
+                typeof val === "object" &&
+                p in (val as Record<string, unknown>)
+              ) {
                 val = (val as Record<string, unknown>)[p];
               } else {
                 val = "";
@@ -275,12 +322,17 @@ export class FlowEngine {
 
         case "text-formatter": {
           const op = config.operation || "template";
-          const inputStr = typeof input === "string" ? input : JSON.stringify(input);
+          const inputStr =
+            typeof input === "string" ? input : JSON.stringify(input);
           switch (op) {
             case "template": {
               const tpl = (config.template as string) || "";
               output = tpl.replace(/\{\{(\w+)\}\}/g, (_, key) => {
-                if (input && typeof input === "object" && key in (input as Record<string, unknown>)) {
+                if (
+                  input &&
+                  typeof input === "object" &&
+                  key in (input as Record<string, unknown>)
+                ) {
                   return String((input as Record<string, unknown>)[key]);
                 }
                 return `{{${key}}}`;
@@ -305,16 +357,98 @@ export class FlowEngine {
           break;
         }
 
+        case "base64-transform": {
+          const operation = config.operation || "encode";
+          const urlSafe = config.urlSafe || false;
+          const path = (config.path as string) || "";
+
+          // Extract value from object using dot-notation path
+          let value: unknown = input;
+
+          if (path && value && typeof value === "object") {
+            const parts = path.split(".");
+
+            for (const p of parts) {
+              if (
+                value &&
+                typeof value === "object" &&
+                p in (value as Record<string, unknown>)
+              ) {
+                value = (value as Record<string, unknown>)[p];
+              } else {
+                value = undefined;
+                break;
+              }
+            }
+          }
+
+          const data =
+            typeof value === "string" ? value : JSON.stringify(value);
+
+          if (operation === "encode") {
+            // Convert UTF-8 string to bytes
+            const bytes = new TextEncoder().encode(data);
+
+            // Convert bytes to binary string for btoa()
+            let binary = "";
+            for (const byte of bytes) {
+              binary += String.fromCharCode(byte);
+            }
+
+            let encoded = btoa(binary);
+
+            // Convert standard Base64 to Base64URL
+            if (urlSafe) {
+              encoded = encoded
+                .replace(/\+/g, "-")
+                .replace(/\//g, "_")
+                .replace(/=+$/, "");
+            }
+
+            output = encoded;
+          } else {
+            let encodedData = data;
+
+            // Convert Base64URL back to standard Base64
+            if (urlSafe) {
+              encodedData = encodedData.replace(/-/g, "+").replace(/_/g, "/");
+
+              // Restore Base64 padding
+              while (encodedData.length % 4 !== 0) {
+                encodedData += "=";
+              }
+            }
+
+            // atob() throws for malformed Base64
+            const binary = atob(encodedData);
+
+            // Convert binary string back to UTF-8 bytes
+            const bytes = Uint8Array.from(binary, (char) => char.charCodeAt(0));
+
+            output = new TextDecoder().decode(bytes);
+          }
+
+          break;
+        }
+
         case "object-mapper": {
           let mapping: Record<string, string> = {};
-          try { mapping = JSON.parse(config.mapping as string || "{}"); } catch {}
-          const inputObj = (typeof input === "object" && input !== null ? input : {}) as Record<string, unknown>;
+          try {
+            mapping = JSON.parse((config.mapping as string) || "{}");
+          } catch {}
+          const inputObj = (
+            typeof input === "object" && input !== null ? input : {}
+          ) as Record<string, unknown>;
           const result: Record<string, unknown> = {};
           for (const [targetKey, sourcePath] of Object.entries(mapping)) {
             const parts = sourcePath.split(".");
             let val: unknown = inputObj;
             for (const p of parts) {
-              if (val && typeof val === "object" && p in (val as Record<string, unknown>)) {
+              if (
+                val &&
+                typeof val === "object" &&
+                p in (val as Record<string, unknown>)
+              ) {
                 val = (val as Record<string, unknown>)[p];
               } else {
                 val = undefined;
@@ -328,7 +462,9 @@ export class FlowEngine {
         }
 
         case "array-iterator": {
-          const inputObj = (typeof input === "object" && input !== null ? input : {}) as Record<string, unknown>;
+          const inputObj = (
+            typeof input === "object" && input !== null ? input : {}
+          ) as Record<string, unknown>;
           let arr: unknown[] = [];
           if (Array.isArray(input)) {
             arr = input;
@@ -336,7 +472,11 @@ export class FlowEngine {
             const parts = config.path.split(".");
             let val: unknown = inputObj;
             for (const p of parts) {
-              if (val && typeof val === "object" && p in (val as Record<string, unknown>)) {
+              if (
+                val &&
+                typeof val === "object" &&
+                p in (val as Record<string, unknown>)
+              ) {
                 val = (val as Record<string, unknown>)[p];
               } else {
                 val = [];
@@ -346,7 +486,7 @@ export class FlowEngine {
             arr = Array.isArray(val) ? val : [];
           }
           const operation = config.operation || "map";
-          const expr = config.expression as string || "item";
+          const expr = (config.expression as string) || "item";
           const fn = new Function("item", "index", `return ${expr}`);
           switch (operation) {
             case "map":
@@ -365,81 +505,83 @@ export class FlowEngine {
           break;
         }
 
-        case "math-operation":{
+        case "math-operation": {
           const {
-            operation ="add",
+            operation = "add",
             operand = 10,
-            path ="",
+            path = "",
           } = config as {
             operation?: string;
-            operand?:number;
-            path?:string;
-          }
+            operand?: number;
+            path?: string;
+          };
 
-          const getValueAtPath = (source: unknown, objectPath: string): unknown =>{
-            
-            if(!objectPath){
+          const getValueAtPath = (
+            source: unknown,
+            objectPath: string,
+          ): unknown => {
+            if (!objectPath) {
               return source;
             }
 
-            return objectPath.split(".").reduce<unknown>((current, key) =>{
-              if(
-                current !== null && 
+            return objectPath.split(".").reduce<unknown>((current, key) => {
+              if (
+                current !== null &&
                 typeof current === "object" &&
                 key in current
-              ){
+              ) {
                 return (current as Record<string, unknown>)[key];
               }
 
               return undefined;
-            }, source)
-          }
+            }, source);
+          };
 
           const setValueAtPath = (
-            source: Record<string, unknown>, 
-            objectPath: string, 
-            value:number) : Record<string,unknown> => {
+            source: Record<string, unknown>,
+            objectPath: string,
+            value: number,
+          ): Record<string, unknown> => {
+            const keys = objectPath.split(".");
+            const result: Record<string, unknown> = { ...source };
 
-          const keys = objectPath.split(".");
-          const result: Record<string,unknown> = { ...source };
+            let current: Record<string, unknown> = result;
 
-          let current: Record<string, unknown> = result;
+            for (let i = 0; i < keys.length - 1; i++) {
+              const key = keys[i];
+              const existingValue = current[key];
 
-          for (let i = 0; i < keys.length - 1; i++) {
-            const key = keys[i];
-            const existingValue = current[key];
+              current[key] =
+                existingValue &&
+                typeof existingValue === "object" &&
+                !Array.isArray(existingValue)
+                  ? { ...(existingValue as Record<string, unknown>) }
+                  : {};
 
-            current[key] =
-              existingValue &&
-              typeof existingValue === "object" &&
-              !Array.isArray(existingValue)
-                ? { ...(existingValue as Record<string, unknown>) }
-                : {};
+              current = current[key] as Record<string, unknown>;
+            }
 
-            current = current[key] as Record<string, unknown>;
-          }
+            current[keys[keys.length - 1]] = value;
 
-          current[keys[keys.length - 1]] = value;
-
-          return result;
+            return result;
           };
 
           const inputValue = getValueAtPath(input, path);
 
           if (typeof inputValue !== "number" || Number.isNaN(inputValue)) {
             throw new Error(
-              `Math operation requires a valid number, but received: ${String(inputValue)}`
+              `Math operation requires a valid number, but received: ${String(inputValue)}`,
             );
           }
           if (typeof operand !== "number" || Number.isNaN(operand)) {
             throw new Error(
-              `Math operation requires a valid numeric operand, but received: ${String(operand)}`
+              `Math operation requires a valid numeric operand, but received: ${String(operand)}`,
             );
           }
 
           let calculatedValue: number;
 
-          switch(operation){
+          switch (operation) {
             case "add":
               calculatedValue = inputValue + operand;
               break;
@@ -464,7 +606,7 @@ export class FlowEngine {
               }
               calculatedValue = inputValue % operand;
               break;
-              
+
             case "round":
               calculatedValue = Math.round(inputValue);
               break;
@@ -476,41 +618,47 @@ export class FlowEngine {
             case "ceil":
               calculatedValue = Math.ceil(inputValue);
               break;
-            
+
             default:
               throw new Error(`Unsupported math operations: ${operation}`);
           }
 
-        if(!path){
-          output = calculatedValue;
-          break;
-        }
+          if (!path) {
+            output = calculatedValue;
+            break;
+          }
 
-        if (
-          input === null ||
-          typeof input !== "object" ||
-          Array.isArray(input)
-        ) {
-          throw new Error(
-            "Object path can only be used with an object input"
+          if (
+            input === null ||
+            typeof input !== "object" ||
+            Array.isArray(input)
+          ) {
+            throw new Error(
+              "Object path can only be used with an object input",
+            );
+          }
+
+          output = setValueAtPath(
+            input as Record<string, unknown>,
+            path,
+            calculatedValue,
           );
-        }
-
-        output = setValueAtPath(
-          input as Record<string, unknown>,
-          path,
-          calculatedValue
-        );
-        break;
+          break;
         }
 
         // ── Conditions ──
         case "condition": {
-          const inputObj = (typeof input === "object" && input !== null ? input : {}) as Record<string, unknown>;
+          const inputObj = (
+            typeof input === "object" && input !== null ? input : {}
+          ) as Record<string, unknown>;
           let result = false;
           if (config.expression) {
             try {
-              const fn = new Function("input", "config", `return ${config.expression}`);
+              const fn = new Function(
+                "input",
+                "config",
+                `return ${config.expression}`,
+              );
               result = !!fn(input, config);
             } catch {
               result = false;
@@ -537,10 +685,16 @@ export class FlowEngine {
                 result = Number(fieldVal) < Number(val);
                 break;
               case "is_empty":
-                result = !fieldVal || fieldVal === "" || (Array.isArray(fieldVal) && fieldVal.length === 0);
+                result =
+                  !fieldVal ||
+                  fieldVal === "" ||
+                  (Array.isArray(fieldVal) && fieldVal.length === 0);
                 break;
               case "is_not_empty":
-                result = !!fieldVal && fieldVal !== "" && !(Array.isArray(fieldVal) && fieldVal.length === 0);
+                result =
+                  !!fieldVal &&
+                  fieldVal !== "" &&
+                  !(Array.isArray(fieldVal) && fieldVal.length === 0);
                 break;
               default:
                 result = !!fieldVal;
@@ -567,7 +721,7 @@ export class FlowEngine {
         case "webhook-response": {
           let responseData: unknown;
           try {
-            responseData = JSON.parse(config.response as string || "{}");
+            responseData = JSON.parse((config.response as string) || "{}");
           } catch {
             responseData = config.response || "OK";
           }
@@ -592,8 +746,8 @@ export class FlowEngine {
           // Show browser notification if permitted
           if (typeof window !== "undefined" && "Notification" in window) {
             if (Notification.permission === "granted") {
-              new Notification(config.title as string || "EnoFlow", {
-                body: config.message as string || "Flow completed",
+              new Notification((config.title as string) || "EnoFlow", {
+                body: (config.message as string) || "Flow completed",
               });
             }
           }
@@ -628,13 +782,19 @@ export class FlowEngine {
     }
   }
 
-  private activeInputs(node: Node<NodeData>, nodes: Map<string, Node<NodeData>>, edges: Edge[]): Edge[] {
-    return edges.filter(edge => {
+  private activeInputs(
+    node: Node<NodeData>,
+    nodes: Map<string, Node<NodeData>>,
+    edges: Edge[],
+  ): Edge[] {
+    return edges.filter((edge) => {
       if (edge.target !== node.id) return false;
       const parent = this.results.get(edge.source);
       if (parent?.skipped) return false;
-      if (nodes.get(edge.source)?.data.nodeType === "condition" &&
-          (edge.sourceHandle === "true" || edge.sourceHandle === "false")) {
+      if (
+        nodes.get(edge.source)?.data.nodeType === "condition" &&
+        (edge.sourceHandle === "true" || edge.sourceHandle === "false")
+      ) {
         const output = parent?.output as { condition?: boolean } | undefined;
         return output?.condition === (edge.sourceHandle === "true");
       }
@@ -644,7 +804,10 @@ export class FlowEngine {
 
   private recordSkipped(nodeId: string): ExecutionResult {
     const result: ExecutionResult = {
-      nodeId, output: undefined, skipped: true, duration: 0,
+      nodeId,
+      output: undefined,
+      skipped: true,
+      duration: 0,
       timestamp: new Date().toISOString(),
     };
     this.results.set(nodeId, result);
@@ -657,18 +820,21 @@ export class FlowEngine {
     edges: Edge[],
     onNodeStart?: (nodeId: string) => void,
     onNodeComplete?: (nodeId: string, result: ExecutionResult) => void,
-    onNodeError?: (nodeId: string, error: string) => void
+    onNodeError?: (nodeId: string, error: string) => void,
   ): Promise<Map<string, ExecutionResult>> {
     this.results.clear();
     this.abortController = new AbortController();
     const sorted = this.topologicalSort(nodes, edges);
-    const nodeMap = new Map(nodes.map(node => [node.id, node]));
+    const nodeMap = new Map(nodes.map((node) => [node.id, node]));
 
     for (const node of sorted) {
       if (this.abortController.signal.aborted) break;
 
       const activeEdges = this.activeInputs(node, nodeMap, edges);
-      if (edges.some(edge => edge.target === node.id) && activeEdges.length === 0) {
+      if (
+        edges.some((edge) => edge.target === node.id) &&
+        activeEdges.length === 0
+      ) {
         const result = this.recordSkipped(node.id);
         onNodeComplete?.(node.id, result);
         continue;
@@ -692,17 +858,26 @@ export class FlowEngine {
   // ── Step-by-step execution ──────────────────────────────────────
   async *executeStepByStep(
     nodes: Node<NodeData>[],
-    edges: Edge[]
+    edges: Edge[],
   ): AsyncGenerator<StepExecution> {
     this.results.clear();
     const sorted = this.topologicalSort(nodes, edges);
-    const nodeMap = new Map(nodes.map(node => [node.id, node]));
+    const nodeMap = new Map(nodes.map((node) => [node.id, node]));
 
     for (const node of sorted) {
       const activeEdges = this.activeInputs(node, nodeMap, edges);
-      if (edges.some(edge => edge.target === node.id) && activeEdges.length === 0) {
+      if (
+        edges.some((edge) => edge.target === node.id) &&
+        activeEdges.length === 0
+      ) {
         this.recordSkipped(node.id);
-        yield { nodeId: node.id, status: "skipped", input: undefined, output: undefined, duration: 0 };
+        yield {
+          nodeId: node.id,
+          status: "skipped",
+          input: undefined,
+          output: undefined,
+          duration: 0,
+        };
         continue;
       }
       const input = this.getInputData(node.id, activeEdges);
@@ -736,14 +911,20 @@ export class FlowEngine {
 }
 
 // ─── Validation ───────────────────────────────────────────────────
-export function validateFlow(nodes: Node<NodeData>[], edges: Edge[]): ValidationResult {
+export function validateFlow(
+  nodes: Node<NodeData>[],
+  edges: Edge[],
+): ValidationResult {
   const errors: ValidationError[] = [];
   const warnings: ValidationError[] = [];
 
   // Check for triggers
   const triggers = nodes.filter((n) => n.data.category === "trigger");
   if (triggers.length === 0) {
-    errors.push({ message: "Flow must have at least one trigger node", severity: "error" });
+    errors.push({
+      message: "Flow must have at least one trigger node",
+      severity: "error",
+    });
   }
 
   // Check for disconnected nodes

@@ -125,6 +125,22 @@ export const nodeDefinitions: NodeDefinition[] = [
     },
   },
   {
+    type: "base64-transform",
+    label: "Base64 Transform",
+    category: "transform",
+    description: "Transform text with base64 encoding and decoding",
+    icon: "Binary",
+    color: "#8b5cf6",
+    inputs: 1,
+    outputs: 1,
+    defaultData: {
+      label: "Base64 Transform",
+      operation: "encode",
+      path: "",
+      urlSafe: false,
+    },
+  },
+  {
     type: "object-mapper",
     label: "Object Mapper",
     category: "transform",
@@ -256,7 +272,7 @@ export const nodeDefinitions: NodeDefinition[] = [
 ];
 
 export const nodeDefinitionMap = Object.fromEntries(
-  nodeDefinitions.map((d) => [d.type, d])
+  nodeDefinitions.map((d) => [d.type, d]),
 );
 
 export const categoryColors: Record<string, string> = {
