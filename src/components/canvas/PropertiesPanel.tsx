@@ -6,7 +6,14 @@ import { X, Trash2, Copy, Settings } from "lucide-react";
 import { generateId } from "@/lib/utils";
 
 export default function PropertiesPanel() {
-  const { nodes, selectedNodeId, selectNode, updateNodeData, removeNode, addNode } = useFlowStore();
+  const {
+    nodes,
+    selectedNodeId,
+    selectNode,
+    updateNodeData,
+    removeNode,
+    addNode,
+  } = useFlowStore();
   const selectedNode = nodes.find((n) => n.id === selectedNodeId);
 
   if (!selectedNode) {
@@ -35,19 +42,32 @@ export default function PropertiesPanel() {
     addNode({
       ...selectedNode,
       id: newId,
-      position: { x: selectedNode.position.x + 40, y: selectedNode.position.y + 40 },
-      data: { ...selectedNode.data, label: `${selectedNode.data.label} (copy)` },
+      position: {
+        x: selectedNode.position.x + 40,
+        y: selectedNode.position.y + 40,
+      },
+      data: {
+        ...selectedNode.data,
+        label: `${selectedNode.data.label} (copy)`,
+      },
     });
   };
 
-  const renderConfigField = (key: string, label: string, type: string, options?: string[]) => {
+  const renderConfigField = (
+    key: string,
+    label: string,
+    type: string,
+    options?: string[],
+  ) => {
     const value = config[key];
 
     switch (type) {
       case "textarea":
         return (
           <div key={key}>
-            <label className="text-[11px] text-gray-400 font-medium mb-1 block">{label}</label>
+            <label className="text-[11px] text-gray-400 font-medium mb-1 block">
+              {label}
+            </label>
             <textarea
               value={String(value || "")}
               onChange={(e) => updateConfig(key, e.target.value)}
@@ -60,14 +80,18 @@ export default function PropertiesPanel() {
       case "select":
         return (
           <div key={key}>
-            <label className="text-[11px] text-gray-400 font-medium mb-1 block">{label}</label>
+            <label className="text-[11px] text-gray-400 font-medium mb-1 block">
+              {label}
+            </label>
             <select
               value={String(value || "")}
               onChange={(e) => updateConfig(key, e.target.value)}
               className="w-full bg-[#1e1e2e] border border-[#313244] rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-[#8b5cf6]"
             >
               {options?.map((opt) => (
-                <option key={opt} value={opt}>{opt}</option>
+                <option key={opt} value={opt}>
+                  {opt}
+                </option>
               ))}
             </select>
           </div>
@@ -76,7 +100,9 @@ export default function PropertiesPanel() {
       case "number":
         return (
           <div key={key}>
-            <label className="text-[11px] text-gray-400 font-medium mb-1 block">{label}</label>
+            <label className="text-[11px] text-gray-400 font-medium mb-1 block">
+              {label}
+            </label>
             <input
               type="number"
               value={Number(value) || 0}
@@ -89,7 +115,9 @@ export default function PropertiesPanel() {
       case "boolean":
         return (
           <div key={key} className="flex items-center justify-between py-1">
-            <label className="text-[11px] text-gray-400 font-medium">{label}</label>
+            <label className="text-[11px] text-gray-400 font-medium">
+              {label}
+            </label>
             <input
               type="checkbox"
               checked={Boolean(value)}
@@ -102,7 +130,9 @@ export default function PropertiesPanel() {
       default:
         return (
           <div key={key}>
-            <label className="text-[11px] text-gray-400 font-medium mb-1 block">{label}</label>
+            <label className="text-[11px] text-gray-400 font-medium mb-1 block">
+              {label}
+            </label>
             <input
               type="text"
               value={String(value || "")}
@@ -114,11 +144,21 @@ export default function PropertiesPanel() {
     }
   };
 
-  const getConfigFields = (): Array<{ key: string; label: string; type: string; options?: string[] }> => {
+  const getConfigFields = (): Array<{
+    key: string;
+    label: string;
+    type: string;
+    options?: string[];
+  }> => {
     switch (selectedNode.data.nodeType) {
       case "webhook-trigger":
         return [
-          { key: "method", label: "Method", type: "select", options: ["GET", "POST", "PUT", "DELETE", "PATCH"] },
+          {
+            key: "method",
+            label: "Method",
+            type: "select",
+            options: ["GET", "POST", "PUT", "DELETE", "PATCH"],
+          },
           { key: "path", label: "Path", type: "text" },
           { key: "sampleBody", label: "Sample Body (JSON)", type: "textarea" },
         ];
@@ -128,39 +168,74 @@ export default function PropertiesPanel() {
           { key: "description", label: "Description", type: "text" },
         ];
       case "delay":
-        return [
-          { key: "duration", label: "Duration (ms)", type: "number" },
-        ];
+        return [{ key: "duration", label: "Duration (ms)", type: "number" }];
       case "http-request":
         return [
-          { key: "method", label: "Method", type: "select", options: ["GET", "POST", "PUT", "DELETE", "PATCH"] },
+          {
+            key: "method",
+            label: "Method",
+            type: "select",
+            options: ["GET", "POST", "PUT", "DELETE", "PATCH"],
+          },
           { key: "url", label: "URL", type: "text" },
           { key: "headers", label: "Headers (JSON)", type: "textarea" },
           { key: "body", label: "Body", type: "textarea" },
-          { key: "mockResponse", label: "Mock Response (JSON)", type: "textarea" },
+          {
+            key: "mockResponse",
+            label: "Mock Response (JSON)",
+            type: "textarea",
+          },
           { key: "mockStatus", label: "Mock Status Code", type: "number" },
           { key: "mockDelay", label: "Mock Delay (ms)", type: "number" },
         ];
       case "code-block":
-        return [
-          { key: "code", label: "JavaScript Code", type: "textarea" },
-        ];
+        return [{ key: "code", label: "JavaScript Code", type: "textarea" }];
       case "json-parser":
         return [
-          { key: "operation", label: "Operation", type: "select", options: ["parse", "stringify"] },
+          {
+            key: "operation",
+            label: "Operation",
+            type: "select",
+            options: ["parse", "stringify"],
+          },
           { key: "path", label: "Extract Path (dot notation)", type: "text" },
         ];
       case "csv-to-json":
         return [
-          { key: "delimiter", label: "Delimiter", type: "select", options: [",", ";", "\\t", "|"] },
+          {
+            key: "delimiter",
+            label: "Delimiter",
+            type: "select",
+            options: [",", ";", "\\t", "|"],
+          },
           { key: "hasHeader", label: "Has Header Row", type: "boolean" },
           { key: "trimValues", label: "Trim Whitespace", type: "boolean" },
           { key: "path", label: "CSV Field Path (optional)", type: "text" },
         ];
       case "text-formatter":
         return [
-          { key: "operation", label: "Operation", type: "select", options: ["template", "uppercase", "lowercase", "trim", "reverse"] },
-          { key: "template", label: "Template (use {{field}})", type: "textarea" },
+          {
+            key: "operation",
+            label: "Operation",
+            type: "select",
+            options: ["template", "uppercase", "lowercase", "trim", "reverse"],
+          },
+          {
+            key: "template",
+            label: "Template (use {{field}})",
+            type: "textarea",
+          },
+        ];
+      case "base64-transform":
+        return [
+          {
+            key: "operation",
+            label: "Operation",
+            type: "select",
+            options: ["encode", "decode"],
+          },
+          { key: "path", label: "Field Path (dot notation)", type: "text" },
+          { key: "urlSafe", label: "URL Safe", type: "boolean" },
         ];
       case "object-mapper":
         return [
@@ -169,26 +244,71 @@ export default function PropertiesPanel() {
       case "array-iterator":
         return [
           { key: "path", label: "Array Path", type: "text" },
-          { key: "operation", label: "Operation", type: "select", options: ["map", "filter", "forEach"] },
-          { key: "expression", label: "Expression (use 'item')", type: "textarea" },
+          {
+            key: "operation",
+            label: "Operation",
+            type: "select",
+            options: ["map", "filter", "forEach"],
+          },
+          {
+            key: "expression",
+            label: "Expression (use 'item')",
+            type: "textarea",
+          },
         ];
       case "math-operation":
         return [
-          { key: "operation", label: "Operations", type: "select", options: ["add", "subtract", "multiply", "divide", "modulo", "round", "floor", "ceil"]},
+          {
+            key: "operation",
+            label: "Operations",
+            type: "select",
+            options: [
+              "add",
+              "subtract",
+              "multiply",
+              "divide",
+              "modulo",
+              "round",
+              "floor",
+              "ceil",
+            ],
+          },
           { key: "operand", label: "Operand", type: "number" },
-          { key: "path", label: "Path (dot notation, optional)", type: "text"}
-        ]
+          { key: "path", label: "Path (dot notation, optional)", type: "text" },
+        ];
       case "condition":
         return [
           { key: "field", label: "Field Name", type: "text" },
-          { key: "operator", label: "Operator", type: "select", options: ["equals", "not_equals", "contains", "greater_than", "less_than", "is_empty", "is_not_empty"] },
+          {
+            key: "operator",
+            label: "Operator",
+            type: "select",
+            options: [
+              "equals",
+              "not_equals",
+              "contains",
+              "greater_than",
+              "less_than",
+              "is_empty",
+              "is_not_empty",
+            ],
+          },
           { key: "value", label: "Compare Value", type: "text" },
-          { key: "expression", label: "Custom Expression (optional)", type: "textarea" },
+          {
+            key: "expression",
+            label: "Custom Expression (optional)",
+            type: "textarea",
+          },
         ];
       case "local-storage":
         return [
           { key: "key", label: "Storage Key", type: "text" },
-          { key: "operation", label: "Operation", type: "select", options: ["set", "get"] },
+          {
+            key: "operation",
+            label: "Operation",
+            type: "select",
+            options: ["set", "get"],
+          },
         ];
       case "webhook-response":
         return [
@@ -199,7 +319,12 @@ export default function PropertiesPanel() {
         return [
           { key: "title", label: "Title", type: "text" },
           { key: "message", label: "Message", type: "textarea" },
-          { key: "type", label: "Type", type: "select", options: ["info", "success", "warning", "error"] },
+          {
+            key: "type",
+            label: "Type",
+            type: "select",
+            options: ["info", "success", "warning", "error"],
+          },
         ];
       default:
         return [];
@@ -247,11 +372,15 @@ export default function PropertiesPanel() {
 
       {/* Node Label */}
       <div className="px-3 py-2 border-b border-[#313244]">
-        <label className="text-[11px] text-gray-400 font-medium mb-1 block">Node Label</label>
+        <label className="text-[11px] text-gray-400 font-medium mb-1 block">
+          Node Label
+        </label>
         <input
           type="text"
           value={selectedNode.data.label}
-          onChange={(e) => updateNodeData(selectedNode.id, { label: e.target.value })}
+          onChange={(e) =>
+            updateNodeData(selectedNode.id, { label: e.target.value })
+          }
           className="w-full bg-[#1e1e2e] border border-[#313244] rounded-lg px-3 py-1.5 text-xs text-white focus:outline-none focus:border-[#8b5cf6]"
         />
       </div>
@@ -259,15 +388,19 @@ export default function PropertiesPanel() {
       {/* Description */}
       {def && (
         <div className="px-3 py-2 border-b border-[#313244]">
-          <p className="text-[10px] text-gray-500 leading-relaxed">{def.description}</p>
+          <p className="text-[10px] text-gray-500 leading-relaxed">
+            {def.description}
+          </p>
         </div>
       )}
 
       {/* Config Fields */}
       <div className="flex-1 overflow-y-auto px-3 py-2 space-y-3">
-        <p className="text-[10px] text-gray-500 uppercase tracking-wider font-semibold">Configuration</p>
+        <p className="text-[10px] text-gray-500 uppercase tracking-wider font-semibold">
+          Configuration
+        </p>
         {getConfigFields().map((field) =>
-          renderConfigField(field.key, field.label, field.type, field.options)
+          renderConfigField(field.key, field.label, field.type, field.options),
         )}
       </div>
 

@@ -174,6 +174,7 @@ Thanks to everyone who has helped build and improve EnoFlow!
 * [@AlphaIsYour](https://github.com/AlphaIsYour) (Maintainer)
 * [@mikevillari](https://github.com/mikevillari) — Fixed asynchronous code block execution (#9) and condition branch pruning (#10)
 * [@72umesh](https://github.com/72umesh) — Added interactive empty-state onboarding guide (#11) and Math Calculator transformation node (#19)
+* [@Tanmaypatil-25](https://github.com/Tanmaypatil-25) — Added Base64 Encode / Decode transformation node (#26)
 
 *(Your name can be here! Check out [CONTRIBUTING.md](CONTRIBUTING.md) to make your first contribution).*
 
